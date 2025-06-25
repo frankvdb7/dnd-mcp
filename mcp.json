@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "dnd-5e": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "/home/jeffwikstrom/Projects/git/dnd-mcp"
+    }
+  }
+}
