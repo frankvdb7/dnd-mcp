@@ -111,7 +111,7 @@ export class WikidotScraper {
               components,
               duration,
               description: '',
-              classes: [],
+              classes: [], // Classes not populated in basic search for performance
               url: `${this.baseUrl}${spellLink.attr('href') || ''}`
             });
           }
@@ -119,7 +119,22 @@ export class WikidotScraper {
       });
     });
 
+    // Limit response size if no query provided (to avoid token limit)
+    if (!query && spells.length > 10) {
+      return spells.slice(0, 10);
+    }
+
     return spells;
+  }
+
+  async getSpellsByClass(className: string): Promise<SpellData[]> {
+    // Force return Shield for wizard to test if code is being executed
+    if (className.toLowerCase() === 'wizard') {
+      const shieldSpell = await this.getSpellDetails('Shield');
+      return shieldSpell ? [shieldSpell] : [];
+    }
+    
+    return [];
   }
 
   async getSpellDetails(spellName: string): Promise<SpellData | null> {

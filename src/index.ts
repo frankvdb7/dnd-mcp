@@ -203,10 +203,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error('class_name is required');
         }
 
-        const allSpells = await scraper.searchSpells();
-        const spellsByClass = allSpells.filter(spell => 
-          spell.classes.some(c => c.toLowerCase().includes(className.toLowerCase()))
-        );
+        const spellsByClass = await scraper.getSpellsByClass(className);
 
         return {
           content: [

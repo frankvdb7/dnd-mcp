@@ -24,9 +24,15 @@
     "eslint": "^8.0.0",
     "jest": "^29.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.8.3"
   },
-  "keywords": ["mcp", "dnd", "dungeons-dragons", "wiki", "server"],
+  "keywords": [
+    "mcp",
+    "dnd",
+    "dungeons-dragons",
+    "wiki",
+    "server"
+  ],
   "author": "",
   "license": "MIT"
 }
