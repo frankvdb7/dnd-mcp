@@ -1,8 +1,15 @@
 # D&D 5E MCP Server
 
-An MCP (Model Context Protocol) server that provides access to D&D 5th Edition content from the dnd5e.wikidot.com wiki. This server enables AI assistants and other MCP clients to retrieve comprehensive D&D 5E information including spells, classes, and races.
+An MCP (Model Context Protocol) server that provides access to D&D 5th Edition content via the Open5e REST API. This server enables AI assistants and other MCP clients to retrieve comprehensive D&D 5E information including spells, classes, races, monsters, and equipment.
 
 ## Available Tools
+
+### Universal Search
+- **`unified_search`** - Search across all D&D content types with intelligent ranking
+  - Required `query` parameter for search terms
+  - Optional `content_types` filter for specific content (spells, monsters, races, etc.)
+  - Optional `fuzzy_threshold` for matching sensitivity
+  - Returns ranked results across all content types
 
 ### Spell Tools
 - **`search_spells`** - Search for spells by name or retrieve all spells
@@ -29,6 +36,48 @@ An MCP (Model Context Protocol) server that provides access to D&D 5th Edition c
 - **`get_race_details`** - Get detailed information about a specific race
   - Requires `race_name` parameter
   - Returns size, speed, ability score increases, traits, and description
+
+### Monster Tools
+- **`search_monsters`** - Search for monsters with filtering options
+  - Optional `query` parameter for monster names
+  - Optional `challenge_rating` filter
+  - Returns monster stats and basic information
+- **`get_monsters_by_cr`** - Get all monsters of a specific challenge rating
+- **`get_monsters_by_cr_range`** - Get monsters within a CR range for encounter planning
+
+### Equipment Tools
+- **`search_weapons`** - Search for weapons with property filtering
+  - Optional filters for martial/finesse weapons
+- **`search_armor`** - Search for armor with AC and category filtering
+- **`search_magic_items`** - Search for magic items with rarity filtering
+- **`get_magic_item_details`** - Get detailed magic item information
+
+### Character Building Tools
+- **`search_feats`** - Search for character feats
+- **`get_feat_details`** - Get detailed feat information
+- **`search_backgrounds`** - Search for character backgrounds
+- **`get_background_details`** - Get detailed background information
+- **`generate_character_build`** - Generate optimized character builds
+- **`compare_character_builds`** - Compare multiple character build options
+- **`get_build_recommendations`** - Get build recommendations for party composition
+
+### Dungeon Master Tools
+- **`build_encounter`** - Build balanced encounters for specified party
+  - Requires `party_size`, `party_level`, and `difficulty`
+  - Optional filters for environment, monster types, CR range
+  - Returns balanced encounter with XP calculations
+- **`calculate_encounter_difficulty`** - Calculate difficulty of custom encounters
+  - Requires party info and list of monsters with counts
+  - Returns encounter difficulty rating and XP breakdown
+
+### Rules & Reference Tools
+- **`search_conditions`** - Search for status conditions and effects
+- **`get_condition_details`** - Get detailed condition information
+- **`get_all_conditions`** - Get all conditions for quick reference
+- **`search_sections`** - Search rules sections for quick rule lookups
+- **`get_section_details`** - Get detailed rules section information
+- **`search_spell_lists`** - Search spell lists by class
+- **`get_spell_list_details`** - Get detailed spell list for specific classes
 
 ## Installation
 
@@ -82,32 +131,38 @@ Add to your MCP client configuration (e.g., `mcp.json`):
 
 The server implements the Model Context Protocol, exposing tools that can be called by MCP clients. Here are some example tool calls:
 
-#### Search for Spells
+#### Universal Search
 ```json
 {
-  "name": "search_spells",
+  "name": "unified_search",
   "arguments": {
-    "query": "fireball"
+    "query": "fireball",
+    "content_types": ["spells", "magic-items"]
   }
 }
 ```
 
-#### Get Spell Details
+#### Build Encounter
 ```json
 {
-  "name": "get_spell_details", 
+  "name": "build_encounter",
   "arguments": {
-    "spell_name": "fireball"
+    "party_size": 4,
+    "party_level": 5,
+    "difficulty": "medium",
+    "environment": "dungeon"
   }
 }
 ```
 
-#### Get Class Information
+#### Generate Character Build
 ```json
 {
-  "name": "get_class_details",
+  "name": "generate_character_build",
   "arguments": {
-    "class_name": "wizard"
+    "playstyle": "damage",
+    "preferred_class": "fighter",
+    "campaign_type": "combat"
   }
 }
 ```
@@ -119,11 +174,12 @@ The server implements the Model Context Protocol, exposing tools that can be cal
 - **Error Handling**: Comprehensive error handling for network issues and missing content
 - **TypeScript**: Fully typed implementation for better development experience
 - **MCP Protocol**: Full compliance with Model Context Protocol specifications
+- **Comprehensive Testing**: Full test coverage for Open5e API functionality and scraping operations
 
 ## Architecture
 
-- **Web Scraper**: Uses Axios and Cheerio for robust HTML parsing
-- **Content Processing**: Structured data extraction from D&D wiki pages
+- **Open5e API Integration**: Uses Axios for REST API communication with Open5e
+- **Content Processing**: Structured data handling from Open5e JSON responses
 - **MCP Server**: Standard MCP protocol implementation with stdio transport
 - **Caching Layer**: NodeCache for efficient content storage
 
@@ -135,35 +191,35 @@ The server implements the Model Context Protocol, exposing tools that can be cal
 - `npm run dev` - Run in development mode with hot reload
 - `npm start` - Run the built server
 - `npm run lint` - Run ESLint
-- `npm test` - Run Jest tests
+- `npm test` - Run Jest tests (includes comprehensive Open5e API tests)
 
 ### Project Structure
 
 ```
 src/
 ├── index.ts      # MCP server implementation and tool handlers
-├── scraper.ts    # Web scraping and data extraction logic
+├── scraper.ts    # Open5e API integration and data fetching
 tsconfig.json     # TypeScript configuration
 mcp.json         # MCP client configuration example
 ```
 
 ## Data Sources
 
-This server scrapes content from [dnd5e.wikidot.com](https://dnd5e.wikidot.com/), a comprehensive D&D 5th Edition reference wiki. The implementation:
+This server uses the [Open5e REST API](https://open5e.com/api/v1/) to access D&D 5th Edition content. The implementation:
 
-- Respects robots.txt and implements rate limiting
-- Uses appropriate User-Agent headers
-- Caches responses to minimize server load
-- Handles network failures gracefully
+- Leverages the Open5e API for comprehensive D&D 5E data
+- Implements intelligent caching to minimize API requests
+- Uses appropriate rate limiting and error handling
+- Provides structured JSON responses from the API
 
-## Future Enhancements
+## Recent Updates
 
-Potential additions to expand functionality:
-- Monster/creature lookup tools
-- Equipment and magic item searches
-- Character background information
-- Feat and ability details
-- Rule references and mechanics
+- **Open5e Migration**: Migrated from web scraping to Open5e REST API for better reliability
+- **Comprehensive Tool Suite**: Added 40+ tools covering all D&D 5E content types
+- **Unified Search**: Intelligent search across all content with fuzzy matching
+- **DM Tools**: Encounter building, difficulty calculation, and party balancing
+- **Character Building**: Automated character optimization and build comparison
+- **Full Test Coverage**: Comprehensive testing for all API functionality
 
 ## License
 
