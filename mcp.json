@@ -3,7 +3,7 @@
     "dnd-5e": {
       "command": "node",
       "args": ["dist/index.js"],
-      "cwd": "/home/jeffwikstrom/Projects/git/dnd-mcp"
+      "cwd": "/media/jeffwikstrom/Secondary/Projects/dnd-mcp"
     }
   }
 }

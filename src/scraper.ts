@@ -35,6 +35,37 @@ export interface RaceData {
   url: string;
 }
 
+export interface MonsterData {
+  name: string;
+  size: string;
+  type: string;
+  alignment: string;
+  armorClass: string;
+  hitPoints: string;
+  speed: string;
+  abilities: {
+    strength: number;
+    dexterity: number;
+    constitution: number;
+    intelligence: number;
+    wisdom: number;
+    charisma: number;
+  };
+  savingThrows?: string;
+  skills?: string;
+  damageResistances?: string;
+  damageImmunities?: string;
+  conditionImmunities?: string;
+  senses: string;
+  languages: string;
+  challengeRating: string;
+  proficiencyBonus: string;
+  actions: string[];
+  legendaryActions?: string[];
+  description: string;
+  url: string;
+}
+
 export class WikidotScraper {
   private cache: NodeCache;
   private baseUrl = 'https://dnd5e.wikidot.com';
@@ -516,5 +547,243 @@ export class WikidotScraper {
     });
     
     return description;
+  }
+
+  async searchMonsters(query?: string): Promise<MonsterData[]> {
+    const $ = await this.fetchPage(`${this.baseUrl}/monsters`);
+    const monsters: MonsterData[] = [];
+
+    $('a[href*="/monster:"]').each((_, link) => {
+      const $link = $(link);
+      const href = $link.attr('href');
+      const name = $link.text().trim();
+      
+      if (href && name && (!query || name.toLowerCase().includes(query.toLowerCase()))) {
+        if (!monsters.some(m => m.name === name)) {
+          monsters.push({
+            name,
+            size: '',
+            type: '',
+            alignment: '',
+            armorClass: '',
+            hitPoints: '',
+            speed: '',
+            abilities: {
+              strength: 0,
+              dexterity: 0,
+              constitution: 0,
+              intelligence: 0,
+              wisdom: 0,
+              charisma: 0
+            },
+            senses: '',
+            languages: '',
+            challengeRating: '',
+            proficiencyBonus: '',
+            actions: [],
+            description: '',
+            url: `${this.baseUrl}${href}`
+          });
+        }
+      }
+    });
+
+    if (!query && monsters.length > 20) {
+      return monsters.slice(0, 20);
+    }
+
+    return monsters;
+  }
+
+  async getMonsterDetails(monsterName: string): Promise<MonsterData | null> {
+    const monsterUrl = `${this.baseUrl}/monster:${monsterName.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    try {
+      const $ = await this.fetchPage(monsterUrl);
+      
+      const name = $('.page-title').text().trim();
+      if (!name) return null;
+
+      const contentDiv = $('#page-content');
+      
+      // Extract basic monster information
+      const size = this.extractMonsterField($, contentDiv, 'Size') || '';
+      const type = this.extractMonsterField($, contentDiv, 'Type') || '';
+      const alignment = this.extractMonsterField($, contentDiv, 'Alignment') || '';
+      const armorClass = this.extractMonsterField($, contentDiv, 'Armor Class') || '';
+      const hitPoints = this.extractMonsterField($, contentDiv, 'Hit Points') || '';
+      const speed = this.extractMonsterField($, contentDiv, 'Speed') || '';
+      
+      // Extract ability scores
+      const abilities = this.extractAbilityScores($, contentDiv);
+      
+      // Extract other fields
+      const savingThrows = this.extractMonsterField($, contentDiv, 'Saving Throws');
+      const skills = this.extractMonsterField($, contentDiv, 'Skills');
+      const damageResistances = this.extractMonsterField($, contentDiv, 'Damage Resistances');
+      const damageImmunities = this.extractMonsterField($, contentDiv, 'Damage Immunities');
+      const conditionImmunities = this.extractMonsterField($, contentDiv, 'Condition Immunities');
+      const senses = this.extractMonsterField($, contentDiv, 'Senses') || '';
+      const languages = this.extractMonsterField($, contentDiv, 'Languages') || '';
+      const challengeRating = this.extractMonsterField($, contentDiv, 'Challenge') || '';
+      const proficiencyBonus = this.extractProficiencyBonus(challengeRating);
+      
+      // Extract actions
+      const actions = this.extractActions($, contentDiv);
+      const legendaryActions = this.extractLegendaryActions($, contentDiv);
+      
+      const description = this.extractMonsterDescription($, contentDiv);
+
+      return {
+        name,
+        size,
+        type,
+        alignment,
+        armorClass,
+        hitPoints,
+        speed,
+        abilities,
+        savingThrows: savingThrows || undefined,
+        skills: skills || undefined,
+        damageResistances: damageResistances || undefined,
+        damageImmunities: damageImmunities || undefined,
+        conditionImmunities: conditionImmunities || undefined,
+        senses,
+        languages,
+        challengeRating,
+        proficiencyBonus,
+        actions,
+        legendaryActions,
+        description,
+        url: monsterUrl
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private extractMonsterField($: cheerio.CheerioAPI, content: cheerio.Cheerio<any>, fieldName: string): string | null {
+    // Look for strong/bold text containing the field name
+    let result: string | null = null;
+    
+    content.find('strong, b').each((_, element) => {
+      const $element = $(element);
+      const text = $element.text().trim();
+      
+      if (text.toLowerCase().includes(fieldName.toLowerCase())) {
+        // Get the text that follows this element
+        const parentText = $element.parent().text();
+        const fieldPattern = new RegExp(fieldName + '[\\s:]+([^\\n]+)', 'i');
+        const match = parentText.match(fieldPattern);
+        if (match) {
+          result = match[1].trim();
+          return false; // Break the loop
+        }
+      }
+    });
+    
+    return result;
+  }
+
+  private extractAbilityScores($: cheerio.CheerioAPI, content: cheerio.Cheerio<any>): MonsterData['abilities'] {
+    const abilities = {
+      strength: 0,
+      dexterity: 0,
+      constitution: 0,
+      intelligence: 0,
+      wisdom: 0,
+      charisma: 0
+    };
+
+    // Look for ability score table or formatted text
+    const text = content.text();
+    const abilityPattern = /STR\s*DEX\s*CON\s*INT\s*WIS\s*CHA\s*(\d+)\s*\([+-]?\d+\)\s*(\d+)\s*\([+-]?\d+\)\s*(\d+)\s*\([+-]?\d+\)\s*(\d+)\s*\([+-]?\d+\)\s*(\d+)\s*\([+-]?\d+\)\s*(\d+)\s*\([+-]?\d+\)/i;
+    const match = text.match(abilityPattern);
+    
+    if (match) {
+      abilities.strength = parseInt(match[1]);
+      abilities.dexterity = parseInt(match[2]);
+      abilities.constitution = parseInt(match[3]);
+      abilities.intelligence = parseInt(match[4]);
+      abilities.wisdom = parseInt(match[5]);
+      abilities.charisma = parseInt(match[6]);
+    }
+
+    return abilities;
+  }
+
+  private extractActions($: cheerio.CheerioAPI, content: cheerio.Cheerio<any>): string[] {
+    const actions: string[] = [];
+    
+    // Look for "Actions" section
+    let inActionsSection = false;
+    content.find('h3, h4, p, div').each((_, element) => {
+      const $element = $(element);
+      const text = $element.text().trim();
+      
+      if (text.toLowerCase() === 'actions') {
+        inActionsSection = true;
+        return;
+      }
+      
+      if (inActionsSection) {
+        if ($element.is('h3, h4') && !text.toLowerCase().includes('action')) {
+          inActionsSection = false;
+          return;
+        }
+        
+        if (text && $element.find('strong, b').length > 0) {
+          actions.push(text);
+        }
+      }
+    });
+    
+    return actions;
+  }
+
+  private extractLegendaryActions($: cheerio.CheerioAPI, content: cheerio.Cheerio<any>): string[] {
+    const legendaryActions: string[] = [];
+    
+    // Look for "Legendary Actions" section
+    let inLegendarySection = false;
+    content.find('h3, h4, p, div').each((_, element) => {
+      const $element = $(element);
+      const text = $element.text().trim();
+      
+      if (text.toLowerCase().includes('legendary actions')) {
+        inLegendarySection = true;
+        return;
+      }
+      
+      if (inLegendarySection) {
+        if ($element.is('h3, h4') && !text.toLowerCase().includes('legendary')) {
+          inLegendarySection = false;
+          return;
+        }
+        
+        if (text && $element.find('strong, b').length > 0) {
+          legendaryActions.push(text);
+        }
+      }
+    });
+    
+    return legendaryActions;
+  }
+
+  private extractMonsterDescription($: cheerio.CheerioAPI, content: cheerio.Cheerio<any>): string {
+    const firstParagraph = content.find('p').first();
+    return firstParagraph.text().trim();
+  }
+
+  private extractProficiencyBonus(challengeRating: string): string {
+    const cr = parseFloat(challengeRating.replace(/[^\d.]/g, ''));
+    if (cr < 5) return '+2';
+    if (cr < 9) return '+3';
+    if (cr < 13) return '+4';
+    if (cr < 17) return '+5';
+    if (cr < 21) return '+6';
+    if (cr < 25) return '+7';
+    if (cr < 29) return '+8';
+    return '+9';
   }
 }

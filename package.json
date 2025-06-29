@@ -1,20 +1,23 @@
 {
   "name": "dnd-mcp-server",
-  "version": "1.0.0",
-  "description": "MCP server for D&D 5E wiki integration",
+  "version": "2.0.0",
+  "description": "MCP server for D&D 5E content using Open5e API - Complete migration from WikiDot scraping",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
+    "dev-legacy": "tsx watch src/scraper.ts",
     "start": "node dist/index.js",
+    "start-legacy": "node dist/scraper.js",
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "axios": "^1.6.0",
+    "axios": "^1.10.0",
     "cheerio": "^1.0.0-rc.12",
+    "fuse.js": "^7.1.0",
     "node-cache": "^5.1.2"
   },
   "devDependencies": {
