@@ -38,8 +38,8 @@ describe('UnifiedSearchEngine', () => {
       expect(result.results.monsters).toBeDefined();
       expect(result.results.monsters.items.length).toBeGreaterThan(0);
       
-      // Should not have results for other content types (they should have 0 items)
-      expect(result.results.spells.items.length).toBe(0);
+      // Should not have results for other content types (they should have be null)
+      expect(result.results.spells).toBeUndefined();
     }, 10000);
     
     it('should limit results per content type', async () => {
