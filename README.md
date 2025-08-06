@@ -119,9 +119,8 @@ Add to your MCP client configuration (e.g., `mcp.json`):
 {
   "mcpServers": {
     "dnd-5e": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "/path/to/dnd-mcp"
+      "command": "npx",
+      "args": ["-y", "@frankvdb/dnd-mcp"],
     }
   }
 }
