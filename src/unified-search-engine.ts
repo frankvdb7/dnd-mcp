@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import { Open5eClient } from './open5e-client.js';
-import * as NodeCache from 'node-cache';
+import NodeCache from 'node-cache';
 
 // Content type enumeration
 export type ContentType = 
@@ -71,7 +71,7 @@ export class UnifiedSearchEngine {
     this.open5eClient = new Open5eClient();
     
     // Separate cache for unified search results
-    this.cache = new NodeCache.default({
+    this.cache = new NodeCache({
       stdTTL: 1800,        // 30 minutes TTL
       checkperiod: 60,     // Check expired keys every minute
       useClones: false     // Better performance

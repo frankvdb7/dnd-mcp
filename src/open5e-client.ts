@@ -1,4 +1,4 @@
-import * as NodeCache from 'node-cache';
+import NodeCache from 'node-cache';
 
 // Enhanced interfaces based on Open5e API structure
 export interface EnhancedSpellData {
@@ -300,7 +300,7 @@ export class Open5eClient {
   private readonly baseURL = 'https://api.open5e.com';
 
   constructor() {
-    this.cache = new NodeCache.default({
+    this.cache = new NodeCache({
       stdTTL: this.cacheMaxAge,
       checkperiod: 60, // Check for expired keys every minute
       useClones: false // For better performance

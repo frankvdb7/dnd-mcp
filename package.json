@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc -b --verbose",
+    "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "dev-legacy": "tsx watch src/scraper.ts",
     "start": "node dist/index.js",
