@@ -5,13 +5,14 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b --verbose",
     "dev": "tsx watch src/index.ts",
     "dev-legacy": "tsx watch src/scraper.ts",
     "start": "node dist/index.js",
     "start-legacy": "node dist/scraper.js",
     "lint": "eslint src --ext .ts",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.1",
@@ -42,6 +43,9 @@
     "dungeons-dragons",
     "wiki",
     "server"
+  ],
+  "files": [
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
