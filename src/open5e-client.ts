@@ -300,7 +300,7 @@ export class Open5eClient {
   private readonly baseURL = 'https://api.open5e.com';
 
   constructor() {
-    this.cache = new NodeCache({ 
+    this.cache = new NodeCache({
       stdTTL: this.cacheMaxAge,
       checkperiod: 60, // Check for expired keys every minute
       useClones: false // For better performance
