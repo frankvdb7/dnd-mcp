@@ -80,10 +80,6 @@ export class UnifiedSearchEngine {
     this.initializeFuzzySearch();
   }
 
-  private isTestEnv(): boolean {
-    return process.env.JEST_WORKER_ID !== undefined;
-  }
-
   /**
    * Main unified search method
    */
@@ -97,9 +93,6 @@ export class UnifiedSearchEngine {
     const cacheKey = this.generateCacheKey(normalizedOptions);
     const cached = this.cache.get<UnifiedSearchResult>(cacheKey);
     if (cached) {
-      if (this.isTestEnv()) {
-        console.log(`🔄 Unified search cache hit: ${cacheKey}`);
-      }
       return cached;
     }
     
@@ -127,9 +120,6 @@ export class UnifiedSearchEngine {
       
       // Cache the result
       this.cache.set(cacheKey, result);
-      if (this.isTestEnv()) {
-        console.log(`💾 Unified search cached: ${cacheKey} (${this.calculateTotalResults(processedResults)} results in ${result.executionTime}ms)`);
-      }
       
       return result;
       
@@ -240,9 +230,6 @@ export class UnifiedSearchEngine {
       return { contentType, data };
       
     } catch (error) {
-      if (this.isTestEnv()) {
-        console.warn(`Search failed for ${contentType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
       return { 
         contentType, 
         data: { count: 0, results: [], hasMore: false }, 
@@ -680,9 +667,6 @@ export class UnifiedSearchEngine {
    */
   private initializeFuzzySearch(): void {
     // Configuration will be expanded in Phase 2
-    if (this.isTestEnv()) {
-      console.error('🔍 Fuzzy search configurations initialized');
-    }
   }
 
   /**
@@ -697,8 +681,5 @@ export class UnifiedSearchEngine {
    */
   public clearCache(): void {
     this.cache.flushAll();
-    if (this.isTestEnv()) {
-      console.log('🗑️ Unified search cache cleared');
-    }
   }
 }
