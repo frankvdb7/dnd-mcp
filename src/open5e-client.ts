@@ -307,11 +307,7 @@ export class Open5eClient {
     });
   }
 
-  private isTestEnv(): boolean {
-    return process.env.JEST_WORKER_ID !== undefined;
-  }
-
-  private async makeRequest<T>(path: string, params?: Record<string, any>): Promise<T> {
+  public async makeRequest<T>(path: string, params?: Record<string, any>): Promise<T> {
     // Input validation
     if (!path || typeof path !== 'string') {
       throw new Error('Invalid API path provided');
@@ -324,9 +320,6 @@ export class Open5eClient {
     // Check cache first
     const cached = this.cache.get<T>(cacheKey);
     if (cached) {
-      if (this.isTestEnv()) {
-        console.log(`📦 Open5e cache hit: ${cacheKey}`);
-      }
       return cached;
     }
 
@@ -373,19 +366,9 @@ export class Open5eClient {
       
       // Cache successful responses
       this.cache.set(cacheKey, data);
-      if (this.isTestEnv()) {
-        console.log(`📥 Open5e cache set: ${cacheKey}`);
-      }
       
       return data;
     } catch (error) {
-      if (this.isTestEnv()) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.error(`Open5e API timeout: ${path}`);
-        } else {
-          console.error(`Open5e API error for ${path}:`, error);
-        }
-      }
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error(`Open5e API timeout: ${path} (request took longer than 30 seconds)`);
       }
