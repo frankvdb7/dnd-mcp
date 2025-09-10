@@ -342,7 +342,7 @@ export class Open5eClient {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch(url.toString(), {
         headers: {
@@ -387,7 +387,7 @@ export class Open5eClient {
         }
       }
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error(`Open5e API timeout: ${path} (request took longer than 15 seconds)`);
+        throw new Error(`Open5e API timeout: ${path} (request took longer than 30 seconds)`);
       }
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error(`Network error accessing Open5e API: ${path}`);
