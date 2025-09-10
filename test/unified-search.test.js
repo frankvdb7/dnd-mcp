@@ -26,7 +26,7 @@ describe('UnifiedSearchEngine', () => {
       expect(result.totalResults).toBeGreaterThan(0);
       expect(result.executionTime).toBeLessThan(5000); // Under 5 seconds
       expect(typeof result.results).toBe('object');
-    }, 10000); // 10 second timeout for API calls
+    }, 20000); // 20 second timeout for API calls
     
     it('should filter by specific content types', async () => {
       const result = await searchEngine.unifiedSearch({
