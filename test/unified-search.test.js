@@ -179,15 +179,16 @@ describe('UnifiedSearchEngine', () => {
       
       // First search - should be slow
       const start1 = Date.now();
-      await searchEngine.unifiedSearch(query);
+      const result1 = await searchEngine.unifiedSearch(query);
       const duration1 = Date.now() - start1;
       
       // Second search - should be fast (cached)
       const start2 = Date.now();
-      await searchEngine.unifiedSearch(query);
+      const result2 = await searchEngine.unifiedSearch(query);
       const duration2 = Date.now() - start2;
       
       expect(duration2).toBeLessThan(duration1);
+      expect(result2).toEqual(result1);
     }, 15000);
     
     it('should provide cache statistics', async () => {
