@@ -307,7 +307,7 @@ export class Open5eClient {
     });
   }
 
-  public async makeRequest<T>(path: string, params?: Record<string, any>): Promise<T> {
+  private async makeRequest<T>(path: string, params?: Record<string, any>): Promise<T> {
     // Input validation
     if (!path || typeof path !== 'string') {
       throw new Error('Invalid API path provided');

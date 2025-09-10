@@ -148,6 +148,7 @@ describe('UnifiedSearchEngine', () => {
     }, 10000);
 
     it('should handle fuzzy search for typos', async () => {
+        // @ts-ignore
         makeRequestSpy = jest.spyOn(Open5eClient.prototype, 'makeRequest');
         // Mock the API to return a known good result for a slightly misspelled query
         makeRequestSpy.mockImplementation((path, params) => {
@@ -207,6 +208,7 @@ describe('UnifiedSearchEngine', () => {
 
   describe('Advanced Features', () => {
     it('should discover related content', async () => {
+      // @ts-ignore
       makeRequestSpy = jest.spyOn(Open5eClient.prototype, 'makeRequest');
       makeRequestSpy.mockImplementation((path, params) => {
         if (path.includes('/v1/spells/')) {
