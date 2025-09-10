@@ -1,6 +1,6 @@
 {
   "name": "@frankvdb/dnd-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server for D&D 5E content using Open5e API - Complete migration from WikiDot scraping",
   "main": "dist/index.js",
   "bin": {
