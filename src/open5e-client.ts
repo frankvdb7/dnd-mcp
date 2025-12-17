@@ -767,15 +767,21 @@ export class Open5eClient {
 
   // New monster functionality
   async searchMonsters(query?: string, options: {
-    cr?: number;
+    cr?: number | string;
+    challenge_rating__gte?: number;
+    challenge_rating__lte?: number;
     limit?: number;
+    offset?: number;
     documentSlug?: string;
   } = {}): Promise<{ count: number; results: MonsterData[]; hasMore: boolean }> {
     const params: Record<string, any> = {};
     
     if (query) params.search = query;
     if (options.cr !== undefined) params.cr = options.cr;
+    if (options.challenge_rating__gte !== undefined) params.challenge_rating__gte = options.challenge_rating__gte;
+    if (options.challenge_rating__lte !== undefined) params.challenge_rating__lte = options.challenge_rating__lte;
     if (options.limit) params.limit = options.limit;
+    if (options.offset) params.offset = options.offset;
     if (options.documentSlug) params.document__slug = options.documentSlug;
 
     const response = await this.makeRequest<Open5eResponse<any>>('/v1/monsters/', params);
@@ -1387,25 +1393,23 @@ export class Open5eClient {
     return encounter;
   }
 
-  private async getMonstersByCRRange(minCR: number, maxCR: number, environment?: string, types?: string[]): Promise<MonsterData[]> {
+  async getMonstersByCRRange(minCR: number, maxCR: number, environment?: string, types?: string[]): Promise<MonsterData[]> {
     const allMonsters: MonsterData[] = [];
-    
-    // Iterate through CR range and fetch monsters
-    for (let cr = minCR; cr <= maxCR; cr++) {
-      try {
-        // Handle CR 0 specially - get fractional CRs instead
-        if (cr === 0) {
-          const fractions = ['1/8', '1/4', '1/2'];
-          for (const fraction of fractions) {
-            const fracResults = await this.searchMonsters('', { cr: fraction as any, limit: 50 });
-            allMonsters.push(...fracResults.results);
-          }
-        } else {
-          const results = await this.searchMonsters('', { cr: cr, limit: 50 });
-          allMonsters.push(...results.results);
-        }
-      } catch (error) {
-      }
+    let hasMore = true;
+    let page = 1;
+    const limit = 50;
+
+    while (hasMore) {
+      const response = await this.searchMonsters('', {
+        challenge_rating__gte: minCR,
+        challenge_rating__lte: maxCR,
+        limit,
+        offset: (page - 1) * limit,
+      });
+
+      allMonsters.push(...response.results);
+      hasMore = response.hasMore;
+      page++;
     }
     
     // Filter by environment and type if specified
