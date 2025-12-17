@@ -1840,7 +1840,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           minCR,
           maxCR,
           envFilter,
-          typeFilter
+          typeFilter,
+          limitValue
         );
 
         // Apply limit if specified

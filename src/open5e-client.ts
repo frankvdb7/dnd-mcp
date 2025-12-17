@@ -768,8 +768,8 @@ export class Open5eClient {
   // New monster functionality
   async searchMonsters(query?: string, options: {
     cr?: number | string;
-    challenge_rating__gte?: number;
-    challenge_rating__lte?: number;
+    cr__gte?: number;
+    cr__lte?: number;
     limit?: number;
     offset?: number;
     documentSlug?: string;
@@ -778,8 +778,8 @@ export class Open5eClient {
     
     if (query) params.search = query;
     if (options.cr !== undefined) params.cr = options.cr;
-    if (options.challenge_rating__gte !== undefined) params.challenge_rating__gte = options.challenge_rating__gte;
-    if (options.challenge_rating__lte !== undefined) params.challenge_rating__lte = options.challenge_rating__lte;
+    if (options.cr__gte !== undefined) params.cr__gte = options.cr__gte;
+    if (options.cr__lte !== undefined) params.cr__lte = options.cr__lte;
     if (options.limit) params.limit = options.limit;
     if (options.offset) params.offset = options.offset;
     if (options.documentSlug) params.document__slug = options.documentSlug;
@@ -1393,42 +1393,54 @@ export class Open5eClient {
     return encounter;
   }
 
-  async getMonstersByCRRange(minCR: number, maxCR: number, environment?: string, types?: string[]): Promise<MonsterData[]> {
+  async getMonstersByCRRange(minCR: number, maxCR: number, environment?: string, types?: string[], limit?: number): Promise<MonsterData[]> {
+    // If there are no filters, we can optimize by fetching only one page.
+    if (limit && !environment && (!types || types.length === 0)) {
+        const response = await this.searchMonsters('', {
+            cr__gte: minCR,
+            cr__lte: maxCR,
+            limit: limit,
+        });
+        return response.results;
+    }
+
     const allMonsters: MonsterData[] = [];
     let hasMore = true;
     let page = 1;
-    const limit = 50;
+    const pageLimit = 50;
 
+    // If there are filters, we need to fetch pages and filter until we meet the limit, or run out of pages.
     while (hasMore) {
       const response = await this.searchMonsters('', {
-        challenge_rating__gte: minCR,
-        challenge_rating__lte: maxCR,
-        limit,
-        offset: (page - 1) * limit,
+        cr__gte: minCR,
+        cr__lte: maxCR,
+        limit: pageLimit,
+        offset: (page - 1) * pageLimit,
       });
 
-      allMonsters.push(...response.results);
+      let filteredResults = response.results;
+      if (environment) {
+        filteredResults = filteredResults.filter(monster =>
+          monster.description?.toLowerCase().includes(environment.toLowerCase()) ||
+          monster.type.toLowerCase().includes(environment.toLowerCase())
+        );
+      }
+      if (types && types.length > 0) {
+        filteredResults = filteredResults.filter(monster =>
+          types.some(type => monster.type.toLowerCase().includes(type.toLowerCase()))
+        );
+      }
+
+      allMonsters.push(...filteredResults);
       hasMore = response.hasMore;
       page++;
+
+      if (limit && allMonsters.length >= limit) {
+        hasMore = false;
+      }
     }
     
-    // Filter by environment and type if specified
-    let filteredMonsters = allMonsters;
-    
-    if (environment) {
-      filteredMonsters = filteredMonsters.filter(monster => 
-        monster.description?.toLowerCase().includes(environment.toLowerCase()) ||
-        monster.type.toLowerCase().includes(environment.toLowerCase())
-      );
-    }
-    
-    if (types && types.length > 0) {
-      filteredMonsters = filteredMonsters.filter(monster =>
-        types.some(type => monster.type.toLowerCase().includes(type.toLowerCase()))
-      );
-    }
-    
-    return filteredMonsters;
+    return limit ? allMonsters.slice(0, limit) : allMonsters;
   }
 
   private allocateMonstersToEncounter(monsters: MonsterData[], budget: number, maxMonsters: number): EncounterMonster[] {
