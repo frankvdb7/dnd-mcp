@@ -14,7 +14,7 @@
     "start": "node dist/index.js",
     "start-legacy": "node dist/scraper.js",
     "lint": "eslint src --ext .ts",
-    "test": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=4096' jest --silent",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --silent",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -25,13 +25,11 @@
     "node-cache": "^5.1.2"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
     "@types/node": "^24.1.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
     "jest": "^30.0.5",
-    "ts-jest": "^29.4.6",
     "tsx": "^4.0.0",
     "typescript": "^5.9.2"
   },

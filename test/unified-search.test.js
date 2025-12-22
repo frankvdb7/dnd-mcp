@@ -282,7 +282,7 @@ describe('UnifiedSearchEngine', () => {
         expect(item).toHaveProperty('description');
         expect(item).toHaveProperty('relevanceScore');
       }
-    }, 30000);
+    }, 10000);
   });
 
   describe('Error Handling', () => {

@@ -1835,7 +1835,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const typeFilter = monster_types as string[] | undefined;
         const limitValue = limit as number | undefined;
 
-        // Call the refactored getMonstersByCRRange function
         const monsters = await open5eClient.getMonstersByCRRange(
           minCR,
           maxCR,
@@ -1844,17 +1843,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           limitValue
         );
 
-        // Apply limit if specified
-        const limitedMonsters = limitValue ? monsters.slice(0, limitValue) : monsters;
-
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify({
                 crRange: `${minCR}-${maxCR}`,
-                count: limitedMonsters.length,
-                monsters: limitedMonsters,
+                count: monsters.length,
+                monsters: monsters,
               }, null, 2),
             },
           ],

@@ -1359,7 +1359,7 @@ export class Open5eClient {
     const totalBudget = budgetPerCharacter * partySize;
     
     // Get monsters within CR range
-    const monsters = await this.getMonstersByCRRange(minCR, maxCR, environment, options.monsterTypes);
+    const monsters = await this.getMonstersByCRRange(minCR, maxCR, environment, options.monsterTypes, 100);
     
     if (monsters.length === 0) {
       throw new Error('No monsters found matching criteria');
@@ -1394,23 +1394,12 @@ export class Open5eClient {
   }
 
   async getMonstersByCRRange(minCR: number, maxCR: number, environment?: string, types?: string[], limit?: number): Promise<MonsterData[]> {
-    // If there are no filters, we can optimize by fetching only one page.
-    if (limit && !environment && (!types || types.length === 0)) {
-        const response = await this.searchMonsters('', {
-            cr__gte: minCR,
-            cr__lte: maxCR,
-            limit: limit,
-        });
-        return response.results;
-    }
-
     const allMonsters: MonsterData[] = [];
     let hasMore = true;
     let page = 1;
-    const pageLimit = 50;
+    const pageLimit = 50; // Fetch in pages of 50
 
-    // If there are filters, we need to fetch pages and filter until we meet the limit, or run out of pages.
-    while (hasMore) {
+    while (hasMore && (!limit || allMonsters.length < limit)) {
       const response = await this.searchMonsters('', {
         cr__gte: minCR,
         cr__lte: maxCR,
@@ -1418,26 +1407,29 @@ export class Open5eClient {
         offset: (page - 1) * pageLimit,
       });
 
-      let filteredResults = response.results;
+      if (!response.results || response.results.length === 0) {
+        hasMore = false;
+        continue;
+      }
+
+      let pageResults = response.results;
+
+      // Apply filters if they exist
       if (environment) {
-        filteredResults = filteredResults.filter(monster =>
-          monster.description?.toLowerCase().includes(environment.toLowerCase()) ||
-          monster.type.toLowerCase().includes(environment.toLowerCase())
+        pageResults = pageResults.filter(monster =>
+          (monster.description && monster.description.toLowerCase().includes(environment.toLowerCase())) ||
+          (monster.type && monster.type.toLowerCase().includes(environment.toLowerCase()))
         );
       }
       if (types && types.length > 0) {
-        filteredResults = filteredResults.filter(monster =>
-          types.some(type => monster.type.toLowerCase().includes(type.toLowerCase()))
+        pageResults = pageResults.filter(monster =>
+          monster.type && types.some(type => monster.type.toLowerCase().includes(type.toLowerCase()))
         );
       }
 
-      allMonsters.push(...filteredResults);
+      allMonsters.push(...pageResults);
       hasMore = response.hasMore;
       page++;
-
-      if (limit && allMonsters.length >= limit) {
-        hasMore = false;
-      }
     }
     
     return limit ? allMonsters.slice(0, limit) : allMonsters;
