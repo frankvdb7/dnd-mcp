@@ -1835,48 +1835,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const typeFilter = monster_types as string[] | undefined;
         const limitValue = limit as number | undefined;
 
-        // Since getMonstersByCRRange is private, we'll build the monster list ourselves
-        const allMonsters: any[] = [];
-        
-        // Iterate through CR range and fetch monsters
-        for (let cr = minCR; cr <= maxCR; cr++) {
-          try {
-            // Handle CR 0 specially - get fractional CRs instead
-            if (cr === 0) {
-              const fractions = ['1/8', '1/4', '1/2'];
-              for (const fraction of fractions) {
-                const fracResults = await open5eClient.searchMonsters('', { cr: fraction as any, limit: 50 });
-                allMonsters.push(...fracResults.results);
-              }
-            } else {
-              const results = await open5eClient.searchMonsters('', { cr: cr, limit: 50 });
-              allMonsters.push(...results.results);
-            }
-          } catch (error) {
-            console.warn(`Failed to fetch monsters for CR ${cr}:`, error);
-          }
-        }
-        
-        // Filter by environment and type if specified
-        let filteredMonsters = allMonsters;
-        
-        if (envFilter) {
-          filteredMonsters = filteredMonsters.filter(monster => 
-            monster.description?.toLowerCase().includes(envFilter.toLowerCase()) ||
-            monster.type.toLowerCase().includes(envFilter.toLowerCase())
-          );
-        }
-        
-        if (typeFilter && typeFilter.length > 0) {
-          filteredMonsters = filteredMonsters.filter(monster =>
-            typeFilter.some((type: string) => monster.type.toLowerCase().includes(type.toLowerCase()))
-          );
-        }
-        
-        // Apply limit if specified
-        if (limitValue) {
-          filteredMonsters = filteredMonsters.slice(0, limitValue);
-        }
+        const monsters = await open5eClient.getMonstersByCRRange(
+          minCR,
+          maxCR,
+          envFilter,
+          typeFilter,
+          limitValue
+        );
 
         return {
           content: [
@@ -1884,8 +1849,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: 'text',
               text: JSON.stringify({
                 crRange: `${minCR}-${maxCR}`,
-                count: filteredMonsters.length,
-                monsters: filteredMonsters
+                count: monsters.length,
+                monsters: monsters,
               }, null, 2),
             },
           ],

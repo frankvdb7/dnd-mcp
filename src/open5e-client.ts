@@ -767,15 +767,21 @@ export class Open5eClient {
 
   // New monster functionality
   async searchMonsters(query?: string, options: {
-    cr?: number;
+    cr?: number | string;
+    cr__gte?: number;
+    cr__lte?: number;
     limit?: number;
+    offset?: number;
     documentSlug?: string;
   } = {}): Promise<{ count: number; results: MonsterData[]; hasMore: boolean }> {
     const params: Record<string, any> = {};
     
     if (query) params.search = query;
     if (options.cr !== undefined) params.cr = options.cr;
+    if (options.cr__gte !== undefined) params.cr__gte = options.cr__gte;
+    if (options.cr__lte !== undefined) params.cr__lte = options.cr__lte;
     if (options.limit) params.limit = options.limit;
+    if (options.offset) params.offset = options.offset;
     if (options.documentSlug) params.document__slug = options.documentSlug;
 
     const response = await this.makeRequest<Open5eResponse<any>>('/v1/monsters/', params);
@@ -1353,7 +1359,7 @@ export class Open5eClient {
     const totalBudget = budgetPerCharacter * partySize;
     
     // Get monsters within CR range
-    const monsters = await this.getMonstersByCRRange(minCR, maxCR, environment, options.monsterTypes);
+    const monsters = await this.getMonstersByCRRange(minCR, maxCR, environment, options.monsterTypes, 100);
     
     if (monsters.length === 0) {
       throw new Error('No monsters found matching criteria');
@@ -1387,44 +1393,46 @@ export class Open5eClient {
     return encounter;
   }
 
-  private async getMonstersByCRRange(minCR: number, maxCR: number, environment?: string, types?: string[]): Promise<MonsterData[]> {
+  async getMonstersByCRRange(minCR: number, maxCR: number, environment?: string, types?: string[], limit?: number): Promise<MonsterData[]> {
     const allMonsters: MonsterData[] = [];
-    
-    // Iterate through CR range and fetch monsters
-    for (let cr = minCR; cr <= maxCR; cr++) {
-      try {
-        // Handle CR 0 specially - get fractional CRs instead
-        if (cr === 0) {
-          const fractions = ['1/8', '1/4', '1/2'];
-          for (const fraction of fractions) {
-            const fracResults = await this.searchMonsters('', { cr: fraction as any, limit: 50 });
-            allMonsters.push(...fracResults.results);
-          }
-        } else {
-          const results = await this.searchMonsters('', { cr: cr, limit: 50 });
-          allMonsters.push(...results.results);
-        }
-      } catch (error) {
+    let hasMore = true;
+    let page = 1;
+    const pageLimit = 50; // Fetch in pages of 50
+
+    while (hasMore && (!limit || allMonsters.length < limit)) {
+      const response = await this.searchMonsters('', {
+        cr__gte: minCR,
+        cr__lte: maxCR,
+        limit: pageLimit,
+        offset: (page - 1) * pageLimit,
+      });
+
+      if (!response.results || response.results.length === 0) {
+        hasMore = false;
+        continue;
       }
+
+      let pageResults = response.results;
+
+      // Apply filters if they exist
+      if (environment) {
+        pageResults = pageResults.filter(monster =>
+          (monster.description && monster.description.toLowerCase().includes(environment.toLowerCase())) ||
+          (monster.type && monster.type.toLowerCase().includes(environment.toLowerCase()))
+        );
+      }
+      if (types && types.length > 0) {
+        pageResults = pageResults.filter(monster =>
+          monster.type && types.some(type => monster.type.toLowerCase().includes(type.toLowerCase()))
+        );
+      }
+
+      allMonsters.push(...pageResults);
+      hasMore = response.hasMore;
+      page++;
     }
     
-    // Filter by environment and type if specified
-    let filteredMonsters = allMonsters;
-    
-    if (environment) {
-      filteredMonsters = filteredMonsters.filter(monster => 
-        monster.description?.toLowerCase().includes(environment.toLowerCase()) ||
-        monster.type.toLowerCase().includes(environment.toLowerCase())
-      );
-    }
-    
-    if (types && types.length > 0) {
-      filteredMonsters = filteredMonsters.filter(monster =>
-        types.some(type => monster.type.toLowerCase().includes(type.toLowerCase()))
-      );
-    }
-    
-    return filteredMonsters;
+    return limit ? allMonsters.slice(0, limit) : allMonsters;
   }
 
   private allocateMonstersToEncounter(monsters: MonsterData[], budget: number, maxMonsters: number): EncounterMonster[] {
